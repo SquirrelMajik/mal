@@ -1,6 +1,7 @@
 import {
     MalType, MalList, MalTypeRegex, MalNumber,
-    MalString, MalBoolean, MalNil, MalUndefined
+    MalString, MalBoolean, MalSymbol,
+    MalNil, MalUndefined
 } from "./types";
 
 
@@ -32,18 +33,22 @@ class Reader {
 }
 
 export function readString(str: string): MalType {
-    const tokens: string[] = tokenizer(str);
+    const tokens: string[] = tokenizer(str.trim());
     const reader: Reader = new Reader(tokens);
     return readForm(reader);
 }
 
 function tokenizer(str: string): Array<string> {
-    if (isComment(str)) {
+    if (isEmpty(str) || isComment(str)) {
         return [];
     } else {
         let regex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\s\[\]{}('"`,;)]*)/g
         return str.match(regex).map(token => token.trim());
     }
+}
+
+function isEmpty(str: string): boolean {
+    return !str;
 }
 
 function isComment(str: string): boolean {
@@ -99,6 +104,6 @@ function AtomFromToken(token: string): MalType {
             throw `Unexcepted String: ${token}`;
         }
     } else {
-        throw `Unexcepted Token: ${token}`;
+        return MalSymbol.get(token);
     }
 }

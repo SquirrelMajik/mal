@@ -19,13 +19,25 @@ export class MalType {
     toString(): string {
         return `${this.constructor.name}: ${this.value.toString()}`
     }
+
+    call(...args: any[]): any {
+        throw `${this} is not callable`;
+    }
 }
 
 export class MalList extends MalType {
     value: Array<MalType>;
 
+    map(callback: (item: MalType, index: number, array: Array<MalType>) => any): Array<any> {
+        return this.value.map(callback);
+    }
+
+    get length(): number {
+        return this.value.length;
+    }
+
     toString(): string {
-        const valueString = `[ ${this.value.map(item => item.toString()).join(', ')} ]`;
+        const valueString = `[${this.value.map(item => item.toString()).join(', ')}]`;
         return `${this.constructor.name}: ${valueString}`
     }
 }
@@ -79,7 +91,27 @@ export class MalHashMap extends MalType {
 }
 
 export class MalSymbol extends MalType {
-    value: Symbols;
+    static map = new Map<symbol, MalSymbol>();
+
+    static get(name: string): MalSymbol {
+        const sym = Symbol.for(name);
+        let token = this.map.get(sym);
+        if (!token) {
+            token = new MalSymbol(name);
+            this.map.set(sym, token);
+        }
+        return token;
+    }
+
+    value: string;
+}
+
+export class MalFunction extends MalType {
+    value: Function;
+
+    call(...args: any[]): any {
+        return this.value(...args);
+    }
 }
 
 export const enum Symbols {
