@@ -1,13 +1,15 @@
 import { MalType, MalUndefined, MalSymbol } from "./types";
-
+import { MalNotFound } from "./errors";
 
 export class MalEnv {
     data: Map<MalSymbol, MalType>;
     outer: MalEnv;
 
-    constructor(outer?: MalEnv) {
+    constructor(outer?: MalEnv, bindings: MalSymbol[] = [], exprs: MalType[] = []) {
         this.data = new Map();
         this.outer = outer;
+
+        bindings.forEach((binding, index) => this.set(binding, exprs[index]));
     }
 
     set(key: MalSymbol, value: MalType): MalType {
@@ -30,8 +32,11 @@ export class MalEnv {
         } else if (this.outer) {
             return this.outer.get(key);
         } else {
-            console.log(this.data)
-            throw `Not Found ${key}`;
+            throw new MalNotFound(key, this);
         }
+    }
+
+    toString(): string {
+        return `Environment: ${this.data}`;
     }
 }

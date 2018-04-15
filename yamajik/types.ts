@@ -1,3 +1,7 @@
+import { MalNotCallable } from "./errors";
+import config from "./config";
+
+
 export const MalTypeRegex = {
     string: /^['|"]/,
     integer: /^-?[0-9]+$/,
@@ -20,12 +24,28 @@ export class MalType {
         return this;
     }
 
+    addTypePrompt(func: Function): Function {
+        return (...args: any[]) => {
+            const prompt = config.debug ? this.typePrompt : '';
+            return prompt + func(...args);
+        }
+    }
+
+    get typePrompt(): string {
+        return `${this.type}: `;
+    }
+
+    valueString(): string {
+        return this.value.toString();
+    }
+
     toString(): string {
-        return `${this.type}: ${this.value.toString()}`
+        const prompt = config.debug ? this.typePrompt : '';
+        return prompt + this.valueString();
     }
 
     call(...args: any[]): any {
-        throw `${this} is not callable`;
+        throw new MalNotCallable(this);
     }
 
     equal(another: MalType): boolean {
@@ -66,9 +86,8 @@ export class MalList extends MalType {
         }
     }
 
-    toString(): string {
-        const valueString = `[${this.value.map(item => item.toString()).join(', ')}]`;
-        return `${this.type}: ${valueString}`
+    valueString(): string {
+        return `[${this.value.map(item => item.toString()).join(', ')}]`;
     }
 }
 
@@ -99,8 +118,8 @@ export class MalNil extends MalType {
         super(null);
     }
 
-    toString(): string {
-        return "MalNil";
+    valueString(): string {
+        return "nil";
     }
 }
 
@@ -111,8 +130,8 @@ export class MalUndefined extends MalType {
         super(undefined);
     }
 
-    toString(): string {
-        return "MalUndefined";
+    valueString(): string {
+        return "undefined";
     }
 }
 
@@ -150,8 +169,16 @@ export class MalFunction extends MalType {
     call(...args: any[]): any {
         return this.value(...args);
     }
+
+    toString(): string {
+        return "[function]";
+    }
 }
 
 export const enum Symbols {
-
+    DEF = "def!",
+    LET = "let*",
+    DO = "do",
+    IF = "if",
+    FN = "fn*"
 }

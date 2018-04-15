@@ -3,6 +3,7 @@ import {
     MalString, MalBoolean, MalSymbol,
     MalNil, MalUndefined
 } from "./types";
+import { MalReadError } from "./errors";
 
 
 class Reader {
@@ -64,10 +65,10 @@ function readForm(reader: Reader): MalType {
 
 function read(reader: Reader, malList: typeof MalList, first: string, end: string): MalList {
     const firstToken: string = reader.next();
-    if (firstToken !== first) throw `Read Error: ${firstToken} is not ${first}`;
+    if (firstToken !== first) throw new MalReadError(`${firstToken} is not ${first}`);
     const list: MalType[] = [];
     for (let token = reader.peek(); token !== end; token = reader.peek()) {
-        if (!token) throw "Unexcept EOF";
+        if (!token) throw new MalReadError("Unexcept EOF");
         list.push(readForm(reader));
     }
     reader.next();
@@ -101,7 +102,7 @@ function AtomFromToken(token: string): MalType {
         try {
             return new MalString(token);
         } catch {
-            throw `Unexcepted String: ${token}`;
+            throw new MalReadError(`invalid string ${token}`);
         }
     } else {
         return MalSymbol.get(token);
