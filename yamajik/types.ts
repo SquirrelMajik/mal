@@ -25,7 +25,7 @@ export class MalType {
     }
 
     addTypePrompt(func: Function): Function {
-        return (...args: any[]) => {
+        return (...args: Array<any>) => {
             const prompt = config.debug ? this.typePrompt : '';
             return prompt + func(...args);
         }
@@ -44,7 +44,7 @@ export class MalType {
         return prompt + this.valueString();
     }
 
-    call(...args: any[]): any {
+    call(...args: Array<any>): any {
         throw new MalNotCallable(this);
     }
 
@@ -166,7 +166,7 @@ export class MalSymbol extends MalType {
 export class MalFunction extends MalType {
     value: Function;
 
-    call(...args: any[]): any {
+    call(...args: Array<any>): any {
         return this.value(...args);
     }
 

@@ -34,7 +34,7 @@ class Reader {
 }
 
 export function readString(str: string): MalType {
-    const tokens: string[] = tokenizer(str.trim());
+    const tokens: Array<string> = tokenizer(str.trim());
     const reader: Reader = new Reader(tokens);
     return readForm(reader);
 }
@@ -66,7 +66,7 @@ function readForm(reader: Reader): MalType {
 function read(reader: Reader, malList: typeof MalList, first: string, end: string): MalList {
     const firstToken: string = reader.next();
     if (firstToken !== first) throw new MalReadError(`${firstToken} is not ${first}`);
-    const list: MalType[] = [];
+    const list: Array<MalType> = [];
     for (let token = reader.peek(); token !== end; token = reader.peek()) {
         if (!token) throw new MalReadError("Unexcept EOF");
         list.push(readForm(reader));

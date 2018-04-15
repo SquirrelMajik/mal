@@ -63,7 +63,7 @@ function EVAL(ast: MalType, env: MalEnv): any {
         return EVAL_AST(ast, newEnv);
     }
 
-    function DO(env: MalEnv, args: MalType[]): MalType {
+    function DO(env: MalEnv, args: Array<MalType>): MalType {
         let results = args.map(arg => EVAL(arg, env));
         return results[results.length - 1];
     }
@@ -79,7 +79,7 @@ function EVAL(ast: MalType, env: MalEnv): any {
             checkMalTypeIsMalSymbol(param);
             return param;
         });
-        return new MalFunction((...args: MalType[]) => {
+        return new MalFunction((...args: Array<MalType>) => {
             return EVAL(bindings, new MalEnv(env, symbols, args));
         });
     }

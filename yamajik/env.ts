@@ -5,7 +5,7 @@ export class MalEnv {
     data: Map<MalSymbol, MalType>;
     outer: MalEnv;
 
-    constructor(outer?: MalEnv, bindings: MalSymbol[] = [], exprs: MalType[] = []) {
+    constructor(outer?: MalEnv, bindings: Array<MalSymbol> = [], exprs: Array<MalType> = []) {
         this.data = new Map();
         this.outer = outer;
 
