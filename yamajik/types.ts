@@ -11,17 +11,29 @@ export class MalType {
         this.value = value;
     }
 
+    get type(): string {
+        return this.constructor.name;
+    }
+
     set(value: any): MalType {
         this.value = value;
         return this;
     }
 
     toString(): string {
-        return `${this.constructor.name}: ${this.value.toString()}`
+        return `${this.type}: ${this.value.toString()}`
     }
 
     call(...args: any[]): any {
         throw `${this} is not callable`;
+    }
+
+    equal(another: MalType): boolean {
+        return this === another || this.valueEqual(another);
+    }
+
+    valueEqual(another: MalType): boolean {
+        return this.type === another.type && this.value === another.value;
     }
 }
 
@@ -36,9 +48,27 @@ export class MalList extends MalType {
         return this.value.length;
     }
 
+    get(index: number): MalType {
+        return this.value[index] || new MalUndefined();
+    }
+
+    first(): MalType {
+        return this.get(0);
+    }
+
+    *[Symbol.iterator](): Iterable<MalType> {
+        yield* this.value;
+    }
+
+    *group(chunkSize: number): Iterable<Array<MalType>> {
+        for (let i = 0; i < this.length; i += chunkSize) {
+            yield this.value.slice(i, i + chunkSize);
+        }
+    }
+
     toString(): string {
         const valueString = `[${this.value.map(item => item.toString()).join(', ')}]`;
-        return `${this.constructor.name}: ${valueString}`
+        return `${this.type}: ${valueString}`
     }
 }
 
@@ -65,6 +95,10 @@ export class MalBoolean extends MalType {
 export class MalNil extends MalType {
     value: null = null;
 
+    constructor() {
+        super(null);
+    }
+
     toString(): string {
         return "MalNil";
     }
@@ -72,6 +106,10 @@ export class MalNil extends MalType {
 
 export class MalUndefined extends MalType {
     value: undefined = undefined;
+
+    constructor() {
+        super(undefined);
+    }
 
     toString(): string {
         return "MalUndefined";

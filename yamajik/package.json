@@ -7,7 +7,8 @@
     "build": "tsfmt -r && tsc -p ./",
     "test:step0": "npm run build && node dist/step0_repl.js",
     "test:step1": "npm run build && node dist/step1_read_print.js",
-    "test:step2": "npm run build && node dist/step2_eval.js"
+    "test:step2": "npm run build && node dist/step2_eval.js",
+    "test:step3": "npm run build && node dist/step3_environment.js"
   },
   "dependencies": {},
   "devDependencies": {
