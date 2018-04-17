@@ -59,43 +59,43 @@ function processEachNamespace(symbol: Symbols, namespace: Namespace): [MalSymbol
 }
 
 function plus(...params: Array<MalType>): MalNumber {
+    params.forEach(checkMalTypeIsMalNumber);
     return new MalNumber(params.reduce((total: number, param: MalType) => {
-        checkMalTypeIsMalNumber(param);
         return total + param.value;
     }, 0));
 }
 
 function minus(...params: Array<MalType>): MalNumber {
+    params.forEach(checkMalTypeIsMalNumber);
     return new MalNumber(params.reduce((total: number, param: MalType) => {
-        checkMalTypeIsMalNumber(param);
         return total - param.value;
     }, 0));
 }
 
 function multiply(...params: Array<MalType>): MalNumber {
+    params.forEach(checkMalTypeIsMalNumber);
     return new MalNumber(params.reduce((total: number, param: MalType) => {
-        checkMalTypeIsMalNumber(param);
         return total * param.value;
     }, 1));
 }
 
 function divide(...params: Array<MalType>): MalNumber {
     checkMalInnerMultipleParameters(MalSymbol.get(Symbols.Divide), params, 1);
-    const first = params.length === 1 ? 1 : params.shift().value;
+    params.forEach(checkMalTypeIsMalNumber);
+    const base = params.length === 1 ? 1 : params.shift().value;
     params.unshift(new MalNumber(1));
     return new MalNumber(params.reduce((total: number, param: MalType) => {
-        checkMalTypeIsMalNumber(param);
         return total / param.value;
-    }, first));
+    }, base));
 }
 
 function ceilDivide(...params: Array<MalType>): MalNumber {
     checkMalInnerMultipleParameters(MalSymbol.get(Symbols.Divide), params, 1);
-    const first = params.length === 1 ? 1 : params.shift().value;
+    params.forEach(checkMalTypeIsMalNumber);
+    const base = params.length === 1 ? 1 : params.shift().value;
     return new MalNumber(params.reduce((total: number, param: MalType) => {
-        checkMalTypeIsMalNumber(param);
         return Math.floor(total / param.value);
-    }, first));
+    }, base));
 }
 
 function list(...instances: Array<MalType>): MalList {
@@ -119,35 +119,35 @@ function count(instance: MalType): MalNumber {
 function equal(...params: Array<MalType>): MalBoolean {
     checkMalInnerMultipleParameters(MalSymbol.get(Symbols.Divide), params, 1);
     return MalBoolean.get(params.every((param, index, array) => {
-        return index < array.length -1 ? param.equal(array[index + 1]) : true;
+        return index < array.length - 1 ? param.equal(array[index + 1]) : true;
     }));
 }
 
 function lessThan(...params: Array<MalType>): MalBoolean {
+    params.forEach(checkMalTypeIsMalNumber);
     return MalBoolean.get(params.every((param, index, array) => {
-        checkMalTypeIsMalNumber(param);
-        return index < array.length -1 ? param.value < array[index + 1].value : true;
+        return index < array.length - 1 ? param.value < array[index + 1].value : true;
     }));
 }
 
 function lessEqual(...params: Array<MalType>): MalBoolean {
+    params.forEach(checkMalTypeIsMalNumber);
     return MalBoolean.get(params.every((param, index, array) => {
-        checkMalTypeIsMalNumber(param);
-        return index < array.length -1 ? param.value <= array[index + 1].value : true;
+        return index < array.length - 1 ? param.value <= array[index + 1].value : true;
     }));
 }
 
 function greatThan(...params: Array<MalType>): MalBoolean {
+    params.forEach(checkMalTypeIsMalNumber);
     return MalBoolean.get(params.every((param, index, array) => {
-        checkMalTypeIsMalNumber(param);
-        return index < array.length -1 ? param.value > array[index + 1].value : true;
+        return index < array.length - 1 ? param.value > array[index + 1].value : true;
     }));
 }
 
 function greatEqual(...params: Array<MalType>): MalBoolean {
+    params.forEach(checkMalTypeIsMalNumber);
     return MalBoolean.get(params.every((param, index, array) => {
-        checkMalTypeIsMalNumber(param);
-        return index < array.length -1 ? param.value >= array[index + 1].value : true;
+        return index < array.length - 1 ? param.value >= array[index + 1].value : true;
     }));
 }
 
