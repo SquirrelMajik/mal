@@ -6,11 +6,12 @@ import { printString } from "./printer";
 import { MalUnexceptedSyntax, MalParametersError, MalMultipleParametersError } from "./errors";
 import {
     MalType, MalList, MalNumber, MalSymbol, MalFunction,
-    MalBoolean, MalNil, Symbols, MalVector
+    MalBoolean, MalNil, Symbols, MalVector, MalHashMap
 } from "./types";
 import {
-    checkMalTypeIsMalSymbol, checkMalTypeIsMalList, isPositive,
-    isMalList, isMalSymbol, checkMalTypeIsMalVector, checkMalTypeIsMalType, checkMalInnerParameters, checkMalInnerMultipleParameters, checkMalVectorLength
+    checkMalTypeIsMalSymbol, checkMalTypeIsMalList, checkMalInnerMultipleParameters,
+    checkMalTypeIsMalVector, checkMalTypeIsMalType, checkMalInnerParameters, checkMalVectorLength,
+    isMalHashMap, isMalVector, isPositive, isMalList, isMalSymbol
 } from "./checker";
 
 
@@ -42,7 +43,9 @@ function EVAL_LIST(ast: MalList, env: MalEnv): MalType {
             case MalSymbol.get(Symbols.If): return IF(env, args);
             case MalSymbol.get(Symbols.Fn): return FN(env, args);
             default: {
-                const [func, ...args] = ast.map(item => EVAL(item, env));
+                const result = EVAL_AST(ast, env);
+                checkMalTypeIsMalList(result);
+                const [func, ...args] = result as MalList;
                 return func.call(...args);
             }
         }
@@ -63,9 +66,9 @@ function EVAL_LIST(ast: MalList, env: MalEnv): MalType {
         checkMalVectorLength(bindings as MalVector, 2);
         for (const [key, value] of (bindings as MalList).group(2)) {
             checkMalTypeIsMalSymbol(key);
-            newEnv.set(key as MalSymbol, EVAL_AST(value, newEnv));
+            newEnv.set(key as MalSymbol, EVAL(value, newEnv));
         }
-        return EVAL_AST(letAst, newEnv);
+        return EVAL(letAst, newEnv);
     }
 
     function DO(env: MalEnv, args: Array<MalType>): MalType {
@@ -78,8 +81,8 @@ function EVAL_LIST(ast: MalList, env: MalEnv): MalType {
         if (args.length === 2) args.push(MalNil.get());
         checkMalInnerParameters(MalSymbol.get(Symbols.If), args, 3);
         const [condition, yes, no] = args;
-        let result = EVAL_AST(condition, env);
-        return isPositive(result) ? EVAL_AST(yes, env) : EVAL_AST(no, env);
+        let result = EVAL(condition, env);
+        return isPositive(result) ? EVAL(yes, env) : EVAL(no, env);
     }
 
     function FN(env: MalEnv, args: Array<MalType>): MalFunction {
@@ -99,6 +102,14 @@ function EVAL_AST(ast: MalType, env: MalEnv): MalType {
         return env.get(ast);
     } else if (isMalList(ast)) {
         return new MalList(ast.map((item: MalType) => EVAL(item, env)));
+    } else if (isMalVector(ast)) {
+        return new MalVector(ast.map((item: MalType) => EVAL(item, env)));
+    } else if (isMalHashMap(ast)) {
+        const mapList: Array<[MalType, MalType]> = [];
+        for (const [key, value] of ast) {
+            mapList.push([key, EVAL(value, env)])
+        }
+        return new MalHashMap(mapList);
     } else {
         return ast;
     }

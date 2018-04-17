@@ -2,7 +2,7 @@ import { isInstance } from "./utils";
 import { MalUnexpectedTokenType, MalMultipleParametersError, MalParametersError, MalUnexpectedLength } from "./errors";
 import {
     MalType, MalList, MalSymbol, MalBoolean, MalNil,
-    MalKeyword, MalString, MalVector
+    MalKeyword, MalString, MalVector, MalFunction, MalHashMap
 } from "./types"
 
 
@@ -42,6 +42,10 @@ export function checkMalTypeIsMalList(instance: MalType): void {
     checkMalType(instance, MalList);
 }
 
+export function checkMalTypeIsMalFunction(instance: MalType): void {
+    checkMalType(instance, MalFunction);
+}
+
 export function checkMalTypeIsMalType(instance: MalType): void {
     checkMalType(instance, MalType);
 }
@@ -70,6 +74,10 @@ export function isMalList(instance: any): instance is MalList {
 
 export function isMalVector(instance: any): instance is MalVector {
     return isInstance(instance, MalVector);
+}
+
+export function isMalHashMap(instance: any): instance is MalHashMap {
+    return isInstance(instance, MalHashMap);
 }
 
 export function isMalSymbol(instance: any): instance is MalSymbol {

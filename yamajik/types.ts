@@ -232,6 +232,15 @@ export class MalHashMap extends MalType {
         })
     }
 
+    *[Symbol.iterator](): IterableIterator<[MalType, MalType]> {
+        yield* this.entries();
+    }
+
+    *entries(): IterableIterator<[MalType, MalType]> {
+        yield* this.keywordMap;
+        yield* this.stringMap;
+    }
+
     equal(another: MalHashMap): boolean {
         return this === another ||
             (MalHashMap.mapEqual(this.keywordMap, another.keywordMap) &&
