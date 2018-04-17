@@ -6,7 +6,7 @@ import { printString } from "./printer";
 import { MalUnexceptedSyntax, MalParametersError, MalMultipleParametersError } from "./errors";
 import {
     MalType, MalList, MalNumber, MalSymbol, MalFunction,
-    MalBoolean, MalNil, Symbols, MalVector, MalHashMap
+    MalBoolean, MalNil, Symbols, MalVector, MalHashMap, MalNativeFunction
 } from "./types";
 import {
     checkMalTypeIsMalSymbol, checkMalTypeIsMalList, checkMalInnerMultipleParameters,
@@ -85,13 +85,13 @@ function EVAL_LIST(ast: MalList, env: MalEnv): MalType {
         return isPositive(result) ? EVAL(yes, env) : EVAL(no, env);
     }
 
-    function FN(env: MalEnv, args: Array<MalType>): MalFunction {
+    function FN(env: MalEnv, args: Array<MalType>): MalNativeFunction {
         checkMalInnerParameters(MalSymbol.get(Symbols.If), args, 2);
         const [symbols, fnAst] = args;
         checkMalTypeIsMalVector(symbols);
         (symbols as MalVector).forEach(checkMalTypeIsMalSymbol);
         const fnSymbols = (symbols as MalVector).map((sym: MalSymbol) => sym as MalSymbol);
-        return new MalFunction((...fnArgs: Array<MalType>) => {
+        return new MalNativeFunction((...fnArgs: Array<MalType>) => {
             return EVAL(fnAst, new MalEnv(env, fnSymbols, fnArgs));
         });
     }

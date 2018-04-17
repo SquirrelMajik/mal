@@ -2,6 +2,7 @@ import config from "./config";
 import { groupArray, isInstance, chain } from "./utils";
 import { isMalKeyword, isMalString } from "./checker";
 import { MalNotCallable, MalInvalidBooleanValue, MalUnexpectedTokenType } from "./errors";
+import { MalEnv } from "env";
 
 
 export const MalTypeRegex = {
@@ -285,15 +286,39 @@ export class MalSymbol extends MalType {
     }
 }
 
-export class MalFunction extends MalType {
-    value: Function;
+export class MalNativeFunction extends MalType {
+    fn: Function;
 
-    constructor(value: Function) {
-        super(value);
+    constructor(fn: Function) {
+        super();
+        this.fn = fn;
     }
 
     call(...args: Array<MalType>): MalType {
-        return this.value(...args);
+        return this.fn(...args);
+    }
+
+    valueString(): string {
+        return "[native function]";
+    }
+}
+
+export class MalFunction extends MalType {
+    ast: MalType;
+    params: Array<MalSymbol>;
+    env: MalEnv;
+    fn: Function;
+
+    constructor(ast: MalType, params: Array<MalSymbol>, env: MalEnv, fn: Function) {
+        super();
+        this.ast = ast;
+        this.params = params;
+        this.env = env;
+        this.fn = fn;
+    }
+
+    call(...args: Array<MalType>): MalType {
+        return this.fn(...args);
     }
 
     valueString(): string {

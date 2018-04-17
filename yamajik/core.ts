@@ -1,9 +1,13 @@
 import { printString } from "./printer";
 import { MalUnexpectedTokenType, MalUnexpectedToken } from "./errors";
-import { isMalList, checkMalTypeIsMalList, isMalType, isFunction } from "./checker";
 import {
-    Symbols, MalType, MalNumber, MalList, MalFunction,
-    MalBoolean, MalString, MalNil, MalUndefined, MalSymbol
+    isMalList, checkMalTypeIsMalList, isMalType, isMalVector,
+    isFunction, checkMalTypeIsMalVector, checkMalTypeIsMalNumber,
+    checkMalInnerMultipleParameters, checkMalTypeIsMalVectorOrMalList,
+} from "./checker";
+import {
+    Symbols, MalType, MalNumber, MalList, MalNativeFunction,
+    MalBoolean, MalString, MalNil, MalUndefined, MalSymbol, MalVector
 } from "./types";
 
 
@@ -48,30 +52,50 @@ function processEachNamespace(symbol: Symbols, namespace: Namespace): [MalSymbol
     if (isMalType(val)) {
         return [sym, val];
     } else if (isFunction(val)) {
-        return [sym, new MalFunction(val)];
+        return [sym, new MalNativeFunction(val)];
     } else {
         throw new MalUnexpectedTokenType(val, MalType, Function);
     }
 }
 
-function plus(x: MalType, y: MalType): MalType {
-    return new MalNumber(x.value + y.value);
+function plus(...params: Array<MalType>): MalNumber {
+    return new MalNumber(params.reduce((total: number, param: MalType) => {
+        checkMalTypeIsMalNumber(param);
+        return total + param.value;
+    }, 0));
 }
 
-function minus(x: MalType, y: MalType): MalType {
-    return new MalNumber(x.value - y.value);
+function minus(...params: Array<MalType>): MalNumber {
+    return new MalNumber(params.reduce((total: number, param: MalType) => {
+        checkMalTypeIsMalNumber(param);
+        return total - param.value;
+    }, 0));
 }
 
-function multiply(x: MalType, y: MalType): MalType {
-    return new MalNumber(x.value * y.value);
+function multiply(...params: Array<MalType>): MalNumber {
+    return new MalNumber(params.reduce((total: number, param: MalType) => {
+        checkMalTypeIsMalNumber(param);
+        return total * param.value;
+    }, 1));
 }
 
-function divide(x: MalType, y: MalType): MalType {
-    return new MalNumber(x.value / y.value);
+function divide(...params: Array<MalType>): MalNumber {
+    checkMalInnerMultipleParameters(MalSymbol.get(Symbols.Divide), params, 1);
+    const first = params.length === 1 ? 1 : params.shift().value;
+    params.unshift(new MalNumber(1));
+    return new MalNumber(params.reduce((total: number, param: MalType) => {
+        checkMalTypeIsMalNumber(param);
+        return total / param.value;
+    }, first));
 }
 
-function ceilDivide(x: MalType, y: MalType): MalType {
-    return new MalNumber(Math.floor(x.value / y.value));
+function ceilDivide(...params: Array<MalType>): MalNumber {
+    checkMalInnerMultipleParameters(MalSymbol.get(Symbols.Divide), params, 1);
+    const first = params.length === 1 ? 1 : params.shift().value;
+    return new MalNumber(params.reduce((total: number, param: MalType) => {
+        checkMalTypeIsMalNumber(param);
+        return Math.floor(total / param.value);
+    }, first));
 }
 
 function list(...instances: Array<MalType>): MalList {
@@ -83,37 +107,48 @@ function isList(instance: MalType): MalBoolean {
 }
 
 function isEmpty(instance: MalType): MalBoolean {
-    if (!isMalList(instance)) {
-        throw new MalUnexpectedTokenType(instance, MalList);
-    }
-    return MalBoolean.get(instance.length > 0);
+    checkMalTypeIsMalVectorOrMalList(instance);
+    return MalBoolean.get((instance as MalVector).length > 0);
 }
 
 function count(instance: MalType): MalNumber {
-    if (!isMalList(instance)) {
-        throw new MalUnexpectedTokenType(instance, MalList);
-    }
-    return new MalNumber(instance.length);
+    checkMalTypeIsMalVectorOrMalList(instance);
+    return new MalNumber((instance as MalVector).length);
 }
 
-function equal(x: MalType, y: MalType): MalBoolean {
-    return MalBoolean.get(x.equal(y));
+function equal(...params: Array<MalType>): MalBoolean {
+    checkMalInnerMultipleParameters(MalSymbol.get(Symbols.Divide), params, 1);
+    return MalBoolean.get(params.every((param, index, array) => {
+        return index < array.length -1 ? param.equal(array[index + 1]) : true;
+    }));
 }
 
-function lessThan(x: MalType, y: MalType): MalBoolean {
-    return MalBoolean.get(x.value < y.value);
+function lessThan(...params: Array<MalType>): MalBoolean {
+    return MalBoolean.get(params.every((param, index, array) => {
+        checkMalTypeIsMalNumber(param);
+        return index < array.length -1 ? param.value < array[index + 1].value : true;
+    }));
 }
 
-function lessEqual(x: MalType, y: MalType): MalBoolean {
-    return MalBoolean.get(x.value <= y.value);
+function lessEqual(...params: Array<MalType>): MalBoolean {
+    return MalBoolean.get(params.every((param, index, array) => {
+        checkMalTypeIsMalNumber(param);
+        return index < array.length -1 ? param.value <= array[index + 1].value : true;
+    }));
 }
 
-function greatThan(x: MalType, y: MalType): MalBoolean {
-    return MalBoolean.get(x.value > y.value);
+function greatThan(...params: Array<MalType>): MalBoolean {
+    return MalBoolean.get(params.every((param, index, array) => {
+        checkMalTypeIsMalNumber(param);
+        return index < array.length -1 ? param.value > array[index + 1].value : true;
+    }));
 }
 
-function greatEqual(x: MalType, y: MalType): MalBoolean {
-    return MalBoolean.get(x.value >= y.value);
+function greatEqual(...params: Array<MalType>): MalBoolean {
+    return MalBoolean.get(params.every((param, index, array) => {
+        checkMalTypeIsMalNumber(param);
+        return index < array.length -1 ? param.value >= array[index + 1].value : true;
+    }));
 }
 
 function printStr(...instances: Array<MalType>): MalString {

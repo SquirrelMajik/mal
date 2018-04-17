@@ -9,7 +9,8 @@
     "test:step1": "npm run build && node dist/step1_read_print.js",
     "test:step2": "npm run build && node dist/step2_eval.js",
     "test:step3": "npm run build && node dist/step3_environment.js",
-    "test:step4": "npm run build && node dist/step4_if_fn_do.js"
+    "test:step4": "npm run build && node dist/step4_if_fn_do.js",
+    "test:step5": "npm run build && node dist/step5_tco.js"
   },
   "dependencies": {},
   "devDependencies": {

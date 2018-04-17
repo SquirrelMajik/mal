@@ -1,16 +1,16 @@
 import repl from 'repl';
 import { readString } from './reader';
 import { printString } from './printer';
-import { MalType, MalList, MalNumber, MalSymbol, MalFunction } from './types';
+import { MalType, MalList, MalNumber, MalSymbol, MalFunction, MalNativeFunction } from './types';
 import { MalEnv } from './env';
 
 
 const ReplEnv: MalEnv = new MalEnv();
-ReplEnv.set(MalSymbol.get('+'), new MalFunction((x: any, y: any) => new MalNumber(x.value + y.value)));
-ReplEnv.set(MalSymbol.get('-'), new MalFunction((x: any, y: any) => new MalNumber(x.value - y.value)));
-ReplEnv.set(MalSymbol.get('*'), new MalFunction((x: any, y: any) => new MalNumber(x.value * y.value)));
-ReplEnv.set(MalSymbol.get('/'), new MalFunction((x: any, y: any) => new MalNumber(x.value / y.value)));
-ReplEnv.set(MalSymbol.get('//'), new MalFunction((x: any, y: any) => new MalNumber(Math.floor(x.value / y.value))));
+ReplEnv.set(MalSymbol.get('+'), new MalNativeFunction((x: any, y: any) => new MalNumber(x.value + y.value)));
+ReplEnv.set(MalSymbol.get('-'), new MalNativeFunction((x: any, y: any) => new MalNumber(x.value - y.value)));
+ReplEnv.set(MalSymbol.get('*'), new MalNativeFunction((x: any, y: any) => new MalNumber(x.value * y.value)));
+ReplEnv.set(MalSymbol.get('/'), new MalNativeFunction((x: any, y: any) => new MalNumber(x.value / y.value)));
+ReplEnv.set(MalSymbol.get('//'), new MalNativeFunction((x: any, y: any) => new MalNumber(Math.floor(x.value / y.value))));
 
 function READ(str: string): MalType {
     return readString(str);

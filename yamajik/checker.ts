@@ -1,8 +1,8 @@
 import { isInstance } from "./utils";
 import { MalUnexpectedTokenType, MalMultipleParametersError, MalParametersError, MalUnexpectedLength } from "./errors";
 import {
-    MalType, MalList, MalSymbol, MalBoolean, MalNil,
-    MalKeyword, MalString, MalVector, MalFunction, MalHashMap
+    MalType, MalList, MalSymbol, MalBoolean, MalNil, MalNumber,
+    MalKeyword, MalString, MalVector, MalFunction, MalHashMap, MalNativeFunction
 } from "./types"
 
 
@@ -30,8 +30,16 @@ export function checkMalVectorLength(instance: MalVector, base: number): void {
     if (instance.length % base !== 0) throw new MalUnexpectedLength(instance, base);
 }
 
+export function checkMalTypeIsMalNumber(instance: MalType): void {
+    checkMalType(instance, MalNumber);
+}
+
 export function checkMalTypeIsMalSymbol(instance: MalType): void {
     checkMalType(instance, MalSymbol);
+}
+
+export function checkMalTypeIsMalVectorOrMalList(instance: MalType): void {
+    checkMalType(instance, MalVector, MalList);
 }
 
 export function checkMalTypeIsMalVector(instance: MalType): void {
@@ -42,6 +50,14 @@ export function checkMalTypeIsMalList(instance: MalType): void {
     checkMalType(instance, MalList);
 }
 
+export function checkMalTypeIsFunction(instance: MalType): void {
+    checkMalType(instance, MalFunction, MalNativeFunction);
+}
+
+export function checkMalTypeIsMalNativeFunction(instance: MalType): void {
+    checkMalType(instance, MalNativeFunction);
+}
+
 export function checkMalTypeIsMalFunction(instance: MalType): void {
     checkMalType(instance, MalFunction);
 }
@@ -50,9 +66,9 @@ export function checkMalTypeIsMalType(instance: MalType): void {
     checkMalType(instance, MalType);
 }
 
-export function checkMalType(instance: MalType, excepted: any): void {
-    if (!isInstance(instance, excepted)) {
-        throw new MalUnexpectedTokenType(instance, excepted);
+export function checkMalType(instance: MalType, ...excepted: Array<any>): void {
+    if (excepted.every(excepted => !isInstance(instance, excepted))) {
+        throw new MalUnexpectedTokenType(instance, ...excepted);
     }
 }
 
@@ -90,6 +106,14 @@ export function isMalKeyword(instance: any): instance is MalKeyword {
 
 export function isMalString(instance: any): instance is MalString {
     return isInstance(instance, MalString);
+}
+
+export function isMalFunction(instance: any): instance is MalFunction {
+    return isInstance(instance, MalFunction);
+}
+
+export function isMalNativeFunction(instance: any): instance is MalNativeFunction {
+    return isInstance(instance, MalNativeFunction);
 }
 
 export function isFunction(instance: any): instance is Function {
