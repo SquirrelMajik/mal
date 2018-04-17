@@ -1,9 +1,10 @@
+import { groupArray } from "./utils";
+import { checkMalVectorLength } from "./checker"
+import { MalReadError, MalUnexpectedToken } from "./errors";
 import {
-    MalType, MalList, MalTypeRegex, MalNumber,
-    MalString, MalBoolean, MalSymbol,
-    MalNil, MalUndefined
+    MalType, MalList, MalTypeRegex, MalNumber, MalString, MalBoolean,
+    MalSymbol, MalNil, MalUndefined, MalVector, MalHashMap, MalKeyword, Symbols
 } from "./types";
-import { MalReadError } from "./errors";
 
 
 class Reader {
@@ -58,12 +59,15 @@ function isComment(str: string): boolean {
 
 function readForm(reader: Reader): MalType {
     switch (reader.peek()) {
+        case undefined: return MalUndefined.get();
         case '(': return readList(reader);
+        case '[': return readVector(reader);
+        case '{': return readHashMap(reader);
         default: return readAtom(reader);
     }
 }
 
-function read(reader: Reader, malList: typeof MalList, first: string, end: string): MalList {
+function read<T extends MalType>(reader: Reader, first: string, end: string): Array<MalType> {
     const firstToken: string = reader.next();
     if (firstToken !== first) throw new MalReadError(`${firstToken} is not ${first}`);
     const list: Array<MalType> = [];
@@ -72,11 +76,24 @@ function read(reader: Reader, malList: typeof MalList, first: string, end: strin
         list.push(readForm(reader));
     }
     reader.next();
-    return new malList(list);
+    return list;
 }
 
 function readList(reader: Reader): MalList {
-    return read(reader, MalList, '(', ')');
+    const tokens = read(reader, '(', ')');
+    return new MalList(tokens);
+}
+
+function readVector(reader: Reader): MalVector {
+    const tokens = read(reader, '[', ']');
+    return new MalVector(tokens);
+}
+
+function readHashMap(reader: Reader): MalHashMap {
+    const tokens = read(reader, '{', '}');
+    const tokenList = new MalList(tokens);
+    checkMalVectorLength(tokenList, 2);
+    return new MalHashMap(Array.from(tokenList.group(2)))
 }
 
 function readAtom(reader: Reader): MalType {
@@ -85,15 +102,10 @@ function readAtom(reader: Reader): MalType {
 }
 
 function AtomFromToken(token: string): MalType {
-    const mappings: any = {
-        false: MalBoolean,
-        true: MalBoolean,
-        nil: MalNil,
-        undefined: MalUndefined
-    };
-    const maltype = mappings[token];
-    if (maltype) {
-        return new maltype(token);
+    if (MalSymbol.has(token)) {
+        return MalSymbol.get(token);
+    } else if (token.startsWith(":")) {
+        return MalKeyword.get(token.substr(1));
     } else if (token.match(MalTypeRegex.integer)) {
         return new MalNumber(parseInt(token, 10));
     } else if (token.match(MalTypeRegex.float)) {
@@ -104,7 +116,9 @@ function AtomFromToken(token: string): MalType {
         } catch {
             throw new MalReadError(`invalid string ${token}`);
         }
-    } else {
+    } else if (token.match(MalTypeRegex.variable)) {
         return MalSymbol.get(token);
+    } else {
+        throw new MalUnexpectedToken(token);
     }
 }

@@ -37,7 +37,7 @@ function EVAL(ast: MalType, env: MalEnv): any {
         }
     }
 
-    function DEF(env: MalEnv, key: MalSymbol, value: MalType): MalType {
+    function DEF(env: MalEnv, key: MalType, value: MalType): MalType {
         if (!(key instanceof MalSymbol)) throw `Unexcepted Token Type: {${key}}, except MalSymbol`;
         return env.set(key, value);
     }

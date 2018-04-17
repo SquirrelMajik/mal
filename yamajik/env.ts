@@ -1,5 +1,5 @@
-import { MalType, MalUndefined, MalSymbol } from "./types";
-import { MalNotFound } from "./errors";
+import { MalNotFound, MalInvalidRestParameter } from "./errors";
+import { MalType, MalList, MalUndefined, MalSymbol } from "./types";
 
 export class MalEnv {
     data: Map<MalSymbol, MalType>;
@@ -9,7 +9,14 @@ export class MalEnv {
         this.data = new Map();
         this.outer = outer;
 
-        bindings.forEach((binding, index) => this.set(binding, exprs[index]));
+        bindings.forEach((binding, index, array) => {
+            if (binding.isMultiple()) {
+                if (index >= array.length) throw new MalInvalidRestParameter(binding);
+                this.set(binding, new MalList(exprs.slice(index)));
+            } else {
+                this.set(binding, exprs[index]);
+            }
+        });
     }
 
     set(key: MalSymbol, value: MalType): MalType {

@@ -6,4 +6,4 @@ const production = {
     debug: false
 };
 
-export default production;
+export default dev;

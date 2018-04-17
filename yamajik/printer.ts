@@ -1,6 +1,6 @@
 import { MalType } from "types";
 
 
-export function printString(exp: MalType) {
-    return exp.toString();
+export function printString(exp: MalType, readable: boolean = true): string {
+    return exp.toString(readable);
 }
