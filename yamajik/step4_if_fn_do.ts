@@ -35,19 +35,16 @@ function EVAL_LIST(ast: MalList, env: MalEnv): MalType {
     } else {
         const [symbol, ...args] = ast;
         checkMalTypeIsMalSymbol(symbol);
-        if (MalSymbol.get(Symbols.Def).equal(symbol)) {
-            return DEF(env, args);
-        } else if (MalSymbol.get(Symbols.Let).equal(symbol)) {
-            return LET(env, args);
-        } else if (MalSymbol.get(Symbols.Do).equal(symbol)) {
-            return DO(env, args);
-        } else if (MalSymbol.get(Symbols.If).equal(symbol)) {
-            return IF(env, args);
-        } else if (MalSymbol.get(Symbols.Fn).equal(symbol)) {
-            return FN(env, args);
-        } else {
-            const [func, ...args] = ast.map(item => EVAL(item, env));
-            return func.call(...args);
+        switch (symbol) {
+            case MalSymbol.get(Symbols.Def): return DEF(env, args);
+            case MalSymbol.get(Symbols.Let): return LET(env, args);
+            case MalSymbol.get(Symbols.Do): return DO(env, args);
+            case MalSymbol.get(Symbols.If): return IF(env, args);
+            case MalSymbol.get(Symbols.Fn): return FN(env, args);
+            default: {
+                const [func, ...args] = ast.map(item => EVAL(item, env));
+                return func.call(...args);
+            }
         }
     }
 
