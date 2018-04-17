@@ -1,10 +1,7 @@
 import config from "./config";
 import { groupArray, isInstance, chain } from "./utils";
 import { isMalKeyword, isMalString } from "./checker";
-import {
-    MalNotCallable, MalInvalidBooleanValue,
-    MalUnexpectedTokenType
-} from "./errors";
+import { MalNotCallable, MalInvalidBooleanValue, MalUnexpectedTokenType } from "./errors";
 
 
 export const MalTypeRegex = {
