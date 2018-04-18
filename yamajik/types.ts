@@ -24,8 +24,7 @@ export class MalType {
     }
 
     set(value: any): MalType {
-        this.value = value;
-        return this;
+        return this.value = value;
     }
 
     addTypePrompt(func: Function): Function {
@@ -37,6 +36,10 @@ export class MalType {
 
     get typePrompt(): string {
         return `${this.type}: `;
+    }
+
+    expr(): string {
+        return this.valueString(true);
     }
 
     valueString(readable: boolean = true): string {
@@ -105,8 +108,9 @@ export class MalVector extends MalType {
         yield* groupArray(this.value, chunkSize);
     }
 
-    valueString(): string {
-        return `[${this.value.map(item => item.toString()).join(', ')}]`;
+    valueString(readable: boolean = true): string {
+        const split = readable ? " " : ", ";
+        return `[${this.value.map(item => item.toString(readable)).join(split)}]`;
     }
 }
 
@@ -115,8 +119,9 @@ export class MalList extends MalVector {
         return new MalList(this.value.slice(start, end));
     }
 
-    valueString(): string {
-        return `(${this.value.map(item => item.toString()).join(', ')})`;
+    valueString(readable: boolean = true): string {
+        const split = readable ? " " : ", ";
+        return `(${this.value.map(item => item.toString(readable)).join(split)})`;
     }
 }
 
@@ -131,8 +136,12 @@ export class MalString extends MalType {
         super(value);
     }
 
+    get string(): string {
+        return this.value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+    }
+
     valueString(readable: boolean = true): string {
-        return readable ? `"${eval(this.value)}"` : `"${this.value}"`;
+        return readable ? `"${this.string}"` : this.value;
     }
 }
 
@@ -248,12 +257,14 @@ export class MalHashMap extends MalType {
                 MalHashMap.mapEqual(this.stringMap, another.stringMap));
     }
 
-    valueString(): string {
+    valueString(readable: boolean = true): string {
+        const kvSplit = readable ? " " : " => ";
+        const itemSplit = readable ? " " : ", ";
         const valueStrings = Array.from(chain(this.keywordMap, this.stringMap)).map(item => {
             const [key, value] = item;
-            return `${key.toString()} => ${value.toString()}`;
+            return [key.toString(readable), value.toString(readable)].join(kvSplit);
         });
-        return `{${valueStrings.join(", ")}}`;
+        return `{${valueStrings.join(itemSplit)}}`;
     }
 }
 
@@ -287,15 +298,10 @@ export class MalSymbol extends MalType {
 }
 
 export class MalNativeFunction extends MalType {
-    fn: Function;
-
-    constructor(fn: Function) {
-        super();
-        this.fn = fn;
-    }
+    value: Function;
 
     call(...args: Array<MalType>): MalType {
-        return this.fn(...args);
+        return this.value(...args);
     }
 
     valueString(): string {
@@ -307,22 +313,37 @@ export class MalFunction extends MalType {
     ast: MalType;
     params: Array<MalSymbol>;
     env: MalEnv;
-    fn: Function;
+    value: Function;
 
     constructor(ast: MalType, params: Array<MalSymbol>, env: MalEnv, fn: Function) {
-        super();
+        super(fn);
         this.ast = ast;
         this.params = params;
         this.env = env;
-        this.fn = fn;
     }
 
     call(...args: Array<MalType>): MalType {
-        return this.fn(...args);
+        return this.value(...args);
     }
 
     valueString(): string {
         return "[function]";
+    }
+}
+
+export class MalAtom extends MalType {
+    value: MalType;
+
+    reset(value: MalType) {
+        return this.value = value;
+    }
+
+    valueString(readable: boolean = true): string {
+        if (readable) {
+            return `(atom ${this.value.toString()})`
+        } else {
+            return `atom => ${this.value.toString()}`;
+        }
     }
 }
 
@@ -332,12 +353,14 @@ export const enum Symbols {
     False = "false",
     Nil = "nil",
     Undefined = "undefined",
+    Argv = "*ARGV*",
     // inner functions
     Def = "def!",
     Let = "let*",
     Do = "do",
     If = "if",
     Fn = "fn*",
+    Eval = "eval",
     // functions
     Plus = "+",
     Minus = "-",
@@ -353,8 +376,15 @@ export const enum Symbols {
     LessEqual = "<=",
     GreatThan = ">",
     GreatEqual = ">=",
-    PrintString = "prstr",
+    PrintString = "pr_str",
     String = "str",
     Print = "prn",
-    PrintLine = "println"
+    PrintLine = "println",
+    ReadString = "read_str",
+    Slurp = "slurp",
+    Atom = "atom",
+    IsAtom = "atom?",
+    Deref = "deref",
+    Reset = "reset!",
+    Swap = "swap!"
 }

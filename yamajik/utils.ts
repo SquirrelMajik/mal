@@ -1,5 +1,5 @@
-export function isInstance(instance: any, classType: any): boolean {
-    return instance instanceof classType;
+export function isInstance(instance: any, ...classTypes: Array<any>): boolean {
+    return classTypes.some(classType => instance instanceof classType);
 }
 
 export function* groupArray(array: Array<any>, chunkSize: number = 2): IterableIterator<Array<any>> {

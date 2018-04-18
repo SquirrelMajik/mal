@@ -2,7 +2,7 @@ import { isInstance } from "./utils";
 import { MalUnexpectedTokenType, MalMultipleParametersError, MalParametersError, MalUnexpectedLength } from "./errors";
 import {
     MalType, MalList, MalSymbol, MalBoolean, MalNil, MalNumber,
-    MalKeyword, MalString, MalVector, MalFunction, MalHashMap, MalNativeFunction
+    MalKeyword, MalString, MalVector, MalFunction, MalHashMap, MalNativeFunction, MalAtom
 } from "./types"
 
 
@@ -62,6 +62,18 @@ export function checkMalTypeIsMalFunction(instance: MalType): void {
     checkMalType(instance, MalFunction);
 }
 
+export function checkMalTypeIsMalFunctionOrMalNativeFunction(instance: MalType): void {
+    checkMalType(instance, MalFunction, MalNativeFunction);
+}
+
+export function checkMalTypeIsMalString(instance: MalType): void {
+    checkMalType(instance, MalString);
+}
+
+export function checkMalTypeIsMalAtom(instance: MalType): void {
+    checkMalType(instance, MalAtom);
+}
+
 export function checkMalTypeIsMalType(instance: MalType): void {
     checkMalType(instance, MalType);
 }
@@ -114,6 +126,10 @@ export function isMalFunction(instance: any): instance is MalFunction {
 
 export function isMalNativeFunction(instance: any): instance is MalNativeFunction {
     return isInstance(instance, MalNativeFunction);
+}
+
+export function isMalAtom(instance: any): instance is MalAtom {
+    return isInstance(instance, MalAtom);
 }
 
 export function isFunction(instance: any): instance is Function {

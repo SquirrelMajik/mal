@@ -63,6 +63,7 @@ function readForm(reader: Reader): MalType {
         case '(': return readList(reader);
         case '[': return readVector(reader);
         case '{': return readHashMap(reader);
+        case '@': return readSymbol(reader, Symbols.Deref);
         default: return readAtom(reader);
     }
 }
@@ -96,6 +97,13 @@ function readHashMap(reader: Reader): MalHashMap {
     return new MalHashMap(Array.from(tokenList.group(2)))
 }
 
+function readSymbol(reader: Reader, name: string) {
+    reader.next();
+    const sym = MalSymbol.get(name);
+    const target = readForm(reader);
+    return new MalList([sym, target]);
+}
+
 function readAtom(reader: Reader): MalType {
     const token = reader.next();
     return AtomFromToken(token);
@@ -112,7 +120,7 @@ function AtomFromToken(token: string): MalType {
         return new MalNumber(parseFloat(token));
     } else if (token.match(MalTypeRegex.string)) {
         try {
-            return new MalString(token);
+            return new MalString(eval(token));
         } catch {
             throw new MalReadError(`invalid string ${token}`);
         }
