@@ -49,7 +49,9 @@ const namespace: Namespace = {
     [Symbols.IsAtom]: isAtom,
     [Symbols.Deref]: deref,
     [Symbols.Reset]: reset,
-    [Symbols.Swap]: swap
+    [Symbols.Swap]: swap,
+    [Symbols.Cons]: cons,
+    [Symbols.Concat]: concat
 };
 
 export default new Map<MalSymbol, MalType>(Object.keys(namespace).map((symbol: Symbols) => {
@@ -221,4 +223,16 @@ function swap(atom: MalAtom, func: MalFunction | MalNativeFunction, ...argFuncs:
     checkMalTypeIsMalFunctionOrMalNativeFunction(func);
     argFuncs.forEach(checkMalTypeIsMalFunctionOrMalNativeFunction);
     return atom.set(func.call(atom.value, ...argFuncs));
+}
+
+function cons(instance: MalType, list: MalVector): MalVector {
+    const newList = new MalList();
+    newList.push(instance, ...list);
+    return newList;
+}
+
+function concat(...lists: Array<MalVector>): MalVector {
+    const newList = new MalList();
+    lists.forEach(list => newList.push(...list));
+    return newList;
 }

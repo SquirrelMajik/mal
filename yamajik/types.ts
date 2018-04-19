@@ -9,7 +9,7 @@ export const MalTypeRegex = {
     string: /^"(?:[^"\\]|\\.)*?"$/,
     integer: /^-?[0-9]+$/,
     float: /^-?[0-9]\.[0-9]+$/,
-    variable: /^[&_a-zA-Z][_a-zA-Z0-9!\*]*$/
+    variable: /^[&_a-zA-Z][_\-a-zA-Z0-9!\*]*$/
 }
 
 export class MalType {
@@ -67,6 +67,10 @@ export class MalType {
 export class MalVector extends MalType {
     value: Array<MalType>;
 
+    constructor(value: Array<MalType> = []) {
+        super(value);
+    }
+
     map(callback: (item: MalType, index: number, array: Array<MalType>) => any): Array<any> {
         return this.value.map(callback);
     }
@@ -95,9 +99,20 @@ export class MalVector extends MalType {
         return new MalVector(this.value.slice(start, end));
     }
 
-    push(...item: Array<MalType>): number {
-        this.value.push(...item);
-        return this.length;
+    push(...items: Array<MalType>): number {
+        return this.value.push(...items);
+    }
+
+    pop(): MalType {
+        return this.value.pop();
+    }
+
+    unshift(...items: Array<MalType>): number {
+        return this.value.unshift(...items);
+    }
+
+    shift(): MalType {
+        return this.value.shift();
     }
 
     *[Symbol.iterator](): IterableIterator<MalType> {
@@ -361,6 +376,8 @@ export const enum Symbols {
     If = "if",
     Fn = "fn*",
     Eval = "eval",
+    Quote = "quote",
+    Quasiquote = "quasiquote",
     // functions
     Plus = "+",
     Minus = "-",
@@ -376,15 +393,19 @@ export const enum Symbols {
     LessEqual = "<=",
     GreatThan = ">",
     GreatEqual = ">=",
-    PrintString = "pr_str",
+    PrintString = "pr-str",
     String = "str",
     Print = "prn",
     PrintLine = "println",
-    ReadString = "read_str",
+    ReadString = "read-str",
     Slurp = "slurp",
     Atom = "atom",
     IsAtom = "atom?",
     Deref = "deref",
     Reset = "reset!",
-    Swap = "swap!"
+    Swap = "swap!",
+    Cons = "cons",
+    Concat = "concat",
+    Unquote = "unquote",
+    SpliceUnquote = "splice-unquote"
 }

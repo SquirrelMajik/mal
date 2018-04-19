@@ -63,6 +63,10 @@ function readForm(reader: Reader): MalType {
         case '(': return readList(reader);
         case '[': return readVector(reader);
         case '{': return readHashMap(reader);
+        case "'": return readSymbol(reader, Symbols.Quote);
+        case "`": return readSymbol(reader, Symbols.Quasiquote);
+        case "~": return readSymbol(reader, Symbols.Unquote);
+        case "~@": return readSymbol(reader, Symbols.SpliceUnquote);
         case '@': return readSymbol(reader, Symbols.Deref);
         default: return readAtom(reader);
     }
