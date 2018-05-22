@@ -1,8 +1,9 @@
 import repl from "repl";
 import core from "./core";
+import config from "./config";
 import { MalEnv } from "./env";
 import { readString } from "./reader";
-import { printString } from "./printer";
+import { printString, debugPrint } from "./printer";
 import { MalUnexceptedSyntax, MalParametersError, MalMultipleParametersError } from "./errors";
 import {
     MalType, MalList, MalNumber, MalSymbol, MalFunction,
@@ -11,15 +12,17 @@ import {
 import {
     checkMalTypeIsMalSymbol, checkMalTypeIsMalList, checkMalInnerMultipleParameters,
     checkMalTypeIsMalVector, checkMalTypeIsMalType, checkMalInnerParameters, checkMalVectorLength,
-    isMalHashMap, isMalVector, isPositive, isMalList, isMalSymbol, isMalFunction, isMalNativeFunction, checkMalTypeIsMalVectorOrMalList, checkMalBindings
+    isMalHashMap, isMalVector, isPositive, isMalList, isMalSymbol, isMalFunction, isMalNativeFunction, checkMalTypeIsMalVectorOrMalList, checkMalTypeIsFunction, checkMalTypeIsMalFunction, checkMalBindings
 } from "./checker";
 
 
 const GlobalEnv: MalEnv = new MalEnv();
 core.forEach((value: MalType, symbol: MalSymbol) => GlobalEnv.set(symbol, value));
 
+rep('(def! not (fn* [a] (if a false true)))');
 rep('(def! load-file (fn* (path) (eval (read-str (str "(do " (slurp path) ")")))))');
-load("globals.lisp");
+rep('(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list \'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons \'cond (rest (rest xs)))))))');
+rep('(defmacro! or (fn* (& xs) (if (empty? xs) nil (if (= 1 (count xs)) (first xs) `(let* (or_FIXME ~(first xs)) (if or_FIXME or_FIXME (or ~@(rest xs))))))))')
 
 function READ(str: string): MalType {
     return readString(str);
@@ -47,45 +50,58 @@ function EVAL(ast: MalType, env: MalEnv): MalType {
     loop: while (true) {
         if (!isMalList(ast)) {
             return EVAL_AST(ast, env);
-        } if (ast.length <= 0) {
-            return MalNil.get();
-        } else {
-            if (isMalSymbol(ast.first())) {
-                const [symbol, ...args] = ast;
-                switch (symbol) {
-                    case MalSymbol.get(Symbols.Def):
-                        return DEF(env, args);
-                    case MalSymbol.get(Symbols.Let):
-                        [ast, env] = LET(env, args);
-                        continue loop;
-                    case MalSymbol.get(Symbols.Do):
-                        ast = DO(env, args);
-                        continue loop;
-                    case MalSymbol.get(Symbols.If):
-                        ast = IF(env, args);
-                        continue loop;
-                    case MalSymbol.get(Symbols.Fn):
-                        return FN(env, args);
-                    case MalSymbol.get(Symbols.Eval):
-                        ast = EVALFUNC(env, args);
-                        continue loop;
-                    case MalSymbol.get(Symbols.Quote):
-                        return QUOTE(env, args);
-                    case MalSymbol.get(Symbols.Quasiquote):
-                        ast = QUASIQUOTE(env, args);
-                        continue loop;
-                }
-            }
-            const result = EVAL_AST(ast, env);
-            checkMalTypeIsMalList(result);
-            const [func, ...params] = result as MalList;
-            if (isMalFunction(func)) {
-                ast = func.ast;
-                env = new MalEnv(func.env, func.params, new MalList(params));
-                continue loop;
-            }
-            return func.call(...params);
         }
+
+        ast = MACROEXPAND(env, [ast]);
+        if (!isMalVector(ast)) {
+            return EVAL_AST(ast, env);
+        }
+
+        if (ast.length <= 0) {
+            return MalNil.get();
+        }
+
+        if (isMalSymbol(ast.first())) {
+            const [symbol, ...args] = ast;
+            switch (symbol) {
+                case MalSymbol.get(Symbols.Def):
+                    return DEF(env, args);
+                case MalSymbol.get(Symbols.Let):
+                    [ast, env] = LET(env, args);
+                    continue loop;
+                case MalSymbol.get(Symbols.Do):
+                    ast = DO(env, args);
+                    continue loop;
+                case MalSymbol.get(Symbols.If):
+                    ast = IF(env, args);
+                    continue loop;
+                case MalSymbol.get(Symbols.Fn):
+                    return FN(env, args);
+                case MalSymbol.get(Symbols.Eval):
+                    ast = EVALFUNC(env, args);
+                    continue loop;
+                case MalSymbol.get(Symbols.Quote):
+                    return QUOTE(env, args);
+                case MalSymbol.get(Symbols.Quasiquote):
+                    ast = QUASIQUOTE(env, args);
+                    continue loop;
+                case MalSymbol.get(Symbols.Defmacro):
+                    return DEFMACRO(env, args);
+                case MalSymbol.get(Symbols.Macroexpand):
+                    ast = MACROEXPAND(env, args);
+                    continue loop;
+            }
+        }
+
+        const result = EVAL_AST(ast, env);
+        checkMalTypeIsMalList(result);
+        const [func, ...params] = result as MalList;
+        if (isMalFunction(func)) {
+            ast = func.ast;
+            env = new MalEnv(func.env, func.params, new MalList(params));
+            continue loop;
+        }
+        return func.call(...params);
     }
 }
 
@@ -174,6 +190,49 @@ function QUASIQUOTE(env: MalEnv, args: Array<MalType>): MalType {
         QUASIQUOTE(env, [ast1]),
         QUASIQUOTE(env, [new MalList(astRest)])
     ]);
+}
+
+function DEFMACRO(env: MalEnv, args: Array<MalType>): MalFunction {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Defmacro), args, 2);
+    const [key, value] = args;
+    checkMalTypeIsMalSymbol(key);
+    const func = EVAL(value, env);
+    checkMalTypeIsMalFunction(func);
+    (func as MalFunction).isMacro = true;
+    return env.set(key as MalSymbol, func) as MalFunction;
+}
+
+function MACROEXPAND(env: MalEnv, args: Array<MalType>): MalType {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Macroexpand), args, 1);
+    let ast = args[0];
+    while (isMacroFunction(env, ast)) {
+        const [symbol, ...args] = ast as MalList;
+        const func = env.get(symbol as MalSymbol);
+        ast = func.call(...args);
+    }
+    return ast;
+}
+
+function isMacroFunction(env: MalEnv, ast: MalType): boolean {
+    if (!isMalList(ast) || ast.length < 1) {
+        return false;
+    }
+
+    const symbol = ast.first();
+    if (!isMalSymbol(symbol)) {
+        return false;
+    }
+
+    if (!env.has(symbol)) {
+        return false;
+    }
+
+    const func = env.get(symbol);
+    if (!isMalFunction(func)) {
+        return false;
+    }
+
+    return func.isMacro;
 }
 
 function PRINT(exp: MalType): string {

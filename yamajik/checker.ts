@@ -1,18 +1,19 @@
 import { isInstance } from "./utils";
-import { MalUnexpectedTokenType, MalMultipleParametersError, MalParametersError, MalUnexpectedLength } from "./errors";
+import { MalUnexpectedTokenType, MalMultipleParametersError, MalParametersError, MalUnexpectedLength, MalInvalidRestParameter } from "./errors";
 import {
     MalType, MalList, MalSymbol, MalBoolean, MalNil, MalNumber,
     MalKeyword, MalString, MalVector, MalFunction, MalHashMap, MalNativeFunction, MalAtom
 } from "./types"
 
 
-export function checkMalParameters(symbol: MalSymbol, parameters: MalVector, excepted: MalVector): void {
-    const calledNum = parameters.length;
-    const exceptedNum = excepted.length;
-    if ((excepted.last() as MalSymbol).isMultiple()) {
-        if (calledNum < exceptedNum - 1) throw new MalMultipleParametersError(symbol, calledNum, exceptedNum - 1);
-    } else {
-        if (calledNum !== exceptedNum) throw new MalParametersError(symbol, calledNum, exceptedNum);
+export function checkMalBindings(symbol: MalSymbol, bindings: MalType): void {
+    checkMalTypeIsMalVector(bindings);
+    for (let index = (bindings as MalVector).length - 1; index >= 0; index--) {
+        const binding = (bindings as MalVector).get(index);
+        checkMalTypeIsMalSymbol(binding);
+        if (isRestMalSymbol(binding) && index !== (bindings as MalVector).length - 2) {
+            throw new MalInvalidRestParameter(bindings);
+        }
     }
 }
 
@@ -134,4 +135,8 @@ export function isMalAtom(instance: any): instance is MalAtom {
 
 export function isFunction(instance: any): instance is Function {
     return isInstance(instance, Function);
+}
+
+export function isRestMalSymbol(instance: any): instance is Function {
+    return isMalSymbol(instance) && instance.value === "&";
 }

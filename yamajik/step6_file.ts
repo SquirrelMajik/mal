@@ -11,7 +11,7 @@ import {
 import {
     checkMalTypeIsMalSymbol, checkMalTypeIsMalList, checkMalInnerMultipleParameters,
     checkMalTypeIsMalVector, checkMalTypeIsMalType, checkMalInnerParameters, checkMalVectorLength,
-    isMalHashMap, isMalVector, isPositive, isMalList, isMalSymbol, isMalFunction, isMalNativeFunction
+    isMalHashMap, isMalVector, isPositive, isMalList, isMalSymbol, isMalFunction, isMalNativeFunction, checkMalBindings
 } from "./checker";
 
 
@@ -76,7 +76,7 @@ function EVAL(ast: MalType, env: MalEnv): MalType {
             const [func, ...params] = result as MalList;
             if (isMalFunction(func)) {
                 ast = func.ast;
-                env = new MalEnv(func.env, func.params, params);
+                env = new MalEnv(func.env, func.params, new MalList(params));
                 continue loop;
             }
             return func.call(...params);
@@ -119,13 +119,12 @@ function IF(env: MalEnv, args: Array<MalType>): MalType {
 }
 
 function FN(env: MalEnv, args: Array<MalType>): MalFunction {
-    checkMalInnerParameters(MalSymbol.get(Symbols.If), args, 2);
-    const [symbols, ast] = args;
-    checkMalTypeIsMalVector(symbols);
-    (symbols as MalVector).forEach(checkMalTypeIsMalSymbol);
-    const params = (symbols as MalVector).map((sym: MalSymbol) => sym as MalSymbol);
-    const fn = (...fnArgs: Array<MalType>) => EVAL(ast, new MalEnv(env, params, fnArgs));
-    return new MalFunction(ast, params, env, fn);
+    const funcSymbol = MalSymbol.get(Symbols.Fn);
+    checkMalInnerParameters(funcSymbol, args, 2);
+    const [bindings, ast] = args;
+    checkMalBindings(funcSymbol, bindings);
+    const fn = (...fnArgs: Array<MalType>) => EVAL(ast, new MalEnv(env, bindings as MalVector, new MalList(fnArgs)));
+    return new MalFunction(ast, bindings as MalVector, env, fn);
 }
 
 function EVALFUNC(env: MalEnv, args: Array<MalType>): MalType {

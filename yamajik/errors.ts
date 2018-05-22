@@ -1,5 +1,5 @@
 import { MalEnv } from "./env";
-import { MalType, MalSymbol, MalList, Symbols, MalVector } from "./types"
+import { MalType, MalSymbol, MalList, Symbols, MalVector, MalNumber } from "./types"
 
 
 export class MalError extends Error {
@@ -50,8 +50,6 @@ export class MalNotFound extends MalError {
         this.message = `Not found: ${this.symbol}`;
     }
 }
-
-
 
 export class MalNotCallable extends MalError {
     constructor(instance: MalType) {
@@ -114,5 +112,17 @@ export class MalMultipleParametersError extends MalParametersError {
     constructor(symbol: MalSymbol, called: number, excepted: number) {
         super(symbol, called, excepted);
         this.message = `${this.symbol} needs at least ${this.excepted} parameters, called ${this.called}`;
+    }
+}
+
+export class MalIndexOutOfRangeError extends MalError {
+    list: MalVector;
+    index: MalNumber;
+
+    constructor(list: MalVector, index: MalNumber) {
+        super();
+        this.list = list;
+        this.index = index;
+        this.message = `Index ${this.index} is out of range ${this.list.length} of ${this.list}`;
     }
 }

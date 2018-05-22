@@ -11,7 +11,7 @@ import {
 import {
     checkMalTypeIsMalSymbol, checkMalTypeIsMalList, checkMalInnerMultipleParameters,
     checkMalTypeIsMalVector, checkMalTypeIsMalType, checkMalInnerParameters, checkMalVectorLength,
-    isMalHashMap, isMalVector, isPositive, isMalList, isMalSymbol
+    isMalHashMap, isMalVector, isPositive, isMalList, isMalSymbol, checkMalBindings
 } from "./checker";
 
 
@@ -85,15 +85,13 @@ function EVAL_LIST(ast: MalList, env: MalEnv): MalType {
         return isPositive(result) ? EVAL(yes, env) : EVAL(no, env);
     }
 
-    function FN(env: MalEnv, args: Array<MalType>): MalNativeFunction {
-        checkMalInnerParameters(MalSymbol.get(Symbols.If), args, 2);
-        const [symbols, fnAst] = args;
-        checkMalTypeIsMalVector(symbols);
-        (symbols as MalVector).forEach(checkMalTypeIsMalSymbol);
-        const fnSymbols = (symbols as MalVector).map((sym: MalSymbol) => sym as MalSymbol);
-        return new MalNativeFunction((...fnArgs: Array<MalType>) => {
-            return EVAL(fnAst, new MalEnv(env, fnSymbols, fnArgs));
-        });
+    function FN(env: MalEnv, args: Array<MalType>): MalFunction {
+        const funcSymbol = MalSymbol.get(Symbols.Fn);
+        checkMalInnerParameters(funcSymbol, args, 2);
+        const [bindings, ast] = args;
+        checkMalBindings(funcSymbol, bindings);
+        const fn = (...fnArgs: Array<MalType>) => EVAL(ast, new MalEnv(env, bindings as MalVector, new MalList(fnArgs)));
+        return new MalFunction(ast, bindings as MalVector, env, fn);
     }
 }
 

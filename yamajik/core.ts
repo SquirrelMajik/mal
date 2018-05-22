@@ -1,12 +1,13 @@
 import fs from "fs";
 
+import { groupArray } from "./utils";
 import { readString } from "./reader";
 import { printString, exprString } from "./printer";
-import { MalUnexpectedTokenType, MalUnexpectedToken } from "./errors";
+import { MalUnexpectedTokenType, MalUnexpectedToken, MalIndexOutOfRangeError } from "./errors";
 import {
     isMalList, checkMalTypeIsMalList, isMalType, isMalVector,
     isFunction, checkMalTypeIsMalVector, checkMalTypeIsMalNumber,
-    checkMalInnerMultipleParameters, checkMalTypeIsMalVectorOrMalList, checkMalType, checkMalTypeIsMalSymbol, checkMalTypeIsMalString, isMalAtom, checkMalTypeIsMalType, checkMalTypeIsMalAtom, checkMalTypeIsMalFunctionOrMalNativeFunction
+    checkMalInnerMultipleParameters, checkMalTypeIsMalVectorOrMalList, checkMalType, checkMalTypeIsMalSymbol, checkMalTypeIsMalString, isMalAtom, checkMalTypeIsMalType, checkMalTypeIsMalAtom, checkMalTypeIsMalFunctionOrMalNativeFunction, checkMalInnerParameters, isPositive, checkMalVectorLength
 } from "./checker";
 import {
     Symbols, MalType, MalNumber, MalList, MalNativeFunction,
@@ -51,7 +52,10 @@ const namespace: Namespace = {
     [Symbols.Reset]: reset,
     [Symbols.Swap]: swap,
     [Symbols.Cons]: cons,
-    [Symbols.Concat]: concat
+    [Symbols.Concat]: concat,
+    [Symbols.Nth]: nth,
+    [Symbols.First]: first,
+    [Symbols.Rest]: rest
 };
 
 export default new Map<MalSymbol, MalType>(Object.keys(namespace).map((symbol: Symbols) => {
@@ -111,22 +115,28 @@ function ceilDivide(...params: Array<MalNumber>): MalNumber {
     }, base));
 }
 
-function list(...instances: Array<MalType>): MalList {
-    return new MalList(instances);
+function list(...params: Array<MalType>): MalList {
+    return new MalList(params);
 }
 
-function isList(instance: MalType): MalBoolean {
+function isList(...params: Array<MalType>): MalBoolean {
+    checkMalInnerParameters(MalSymbol.get(Symbols.IsList), params, 1);
+    const instance = params[0];
     return MalBoolean.get(isMalList(instance));
 }
 
-function isEmpty(instance: MalVector): MalBoolean {
+function isEmpty(...params: Array<MalType>): MalBoolean {
+    checkMalInnerParameters(MalSymbol.get(Symbols.IsEmpty), params, 1);
+    const instance = params[0];
     checkMalTypeIsMalVectorOrMalList(instance);
-    return MalBoolean.get(instance.length > 0);
+    return MalBoolean.get((instance as MalVector).length === 0);
 }
 
-function count(instance: MalVector): MalNumber {
+function count(...params: Array<MalType>): MalNumber {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Count), params, 1);
+    const instance = params[0];
     checkMalTypeIsMalVectorOrMalList(instance);
-    return new MalNumber(instance.length);
+    return new MalNumber((instance as MalVector).length);
 }
 
 function equal(...params: Array<MalType>): MalBoolean {
@@ -164,75 +174,119 @@ function greatEqual(...params: Array<MalNumber>): MalBoolean {
     }));
 }
 
-function printStr(...instances: Array<MalType>): MalString {
-    const newString = instances.map(instance => printString(instance, true)).join(" ");
+function printStr(...params: Array<MalType>): MalString {
+    const newString = params.map(param => printString(param, true)).join(" ");
     return new MalString(newString);
 }
 
-function string(...instances: Array<MalType>): MalString {
-    instances.forEach(checkMalTypeIsMalString);
-    const newString = instances.map(instance => instance.value).join("");
+function string(...params: Array<MalType>): MalString {
+    params.forEach(checkMalTypeIsMalString);
+    const newString = params.map(param => param.value).join("");
     return new MalString(newString);
 }
 
-function print(...instances: Array<MalType>): MalNil {
-    const newString = instances.map(instance => printString(instance, true)).join(" ");
+function print(...params: Array<MalType>): MalNil {
+    const newString = params.map(param => printString(param, true)).join(" ");
     console.log(newString)
     return MalNil.get();
 }
 
-function println(...instances: Array<MalType>): MalNil {
-    const newString = instances.map(instance => printString(instance, false)).join(" ");
+function println(...params: Array<MalType>): MalNil {
+    const newString = params.map(param => printString(param, false)).join(" ");
     console.log(newString)
     return MalNil.get();
 }
 
-function readStr(str: MalString): MalType {
+function readStr(...params: Array<MalType>): MalType {
+    checkMalInnerParameters(MalSymbol.get(Symbols.ReadString), params, 1);
+    const str = params[0];
     checkMalTypeIsMalString(str);
     return readString(str.value);
 }
 
-function slurp(str: MalString): MalString {
+function slurp(...params: Array<MalType>): MalString {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Slurp), params, 1);
+    const str = params[0];
     checkMalTypeIsMalString(str);
     const content = fs.readFileSync(str.value, "UTF-8");
     return new MalString(content);
 }
 
-function atom(instance: MalType): MalAtom {
+function atom(...params: Array<MalType>): MalAtom {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Atom), params, 1);
+    const instance = params[0];
     checkMalTypeIsMalType(instance);
     return new MalAtom(instance)
 }
 
-function isAtom(instance: MalType): MalBoolean {
+function isAtom(...params: Array<MalType>): MalBoolean {
+    checkMalInnerParameters(MalSymbol.get(Symbols.IsAtom), params, 1);
+    const instance = params[0];
     return MalBoolean.get(isMalAtom(instance));
 }
 
-function deref(atom: MalAtom) {
+function deref(...params: Array<MalType>): MalType {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Deref), params, 1);
+    const atom = params[0];
     checkMalTypeIsMalAtom(atom);
     return atom.value;
 }
 
-function reset(atom: MalAtom, value: MalType) {
+function reset(...params: Array<MalType>): MalType {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Reset), params, 2);
+    const [atom, instance] = params;
     checkMalTypeIsMalAtom(atom);
-    checkMalTypeIsMalType(value);
-    return atom.reset(value);
+    checkMalTypeIsMalType(instance);
+    return (atom as MalAtom).reset(instance);
 }
 
-function swap(atom: MalAtom, func: MalFunction | MalNativeFunction, ...argFuncs: Array<MalFunction | MalNativeFunction>) {
+function swap(...params: Array<MalType>): MalType {
+    checkMalInnerMultipleParameters(MalSymbol.get(Symbols.Swap), params, 2);
+    const [atom, func, ...args] = params;
     checkMalTypeIsMalAtom(atom);
     checkMalTypeIsMalFunctionOrMalNativeFunction(func);
-    argFuncs.forEach(checkMalTypeIsMalFunctionOrMalNativeFunction);
-    return atom.set(func.call(atom.value, ...argFuncs));
+    args.forEach(checkMalTypeIsMalFunctionOrMalNativeFunction);
+    return atom.set(func.call(atom.value, ...args));
 }
 
-function cons(instance: MalType, list: MalVector): MalVector {
+function cons(...params: Array<MalType>): MalList {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Cons), params, 2);
+    const [instance, list] = params;
+    checkMalTypeIsMalType(instance);
+    checkMalTypeIsMalVectorOrMalList(list);
     const newList = new MalList();
-    newList.push(instance, ...list);
+    newList.push(instance, ...list as MalVector);
     return newList;
 }
 
-function concat(...lists: Array<MalVector>): MalVector {
+function concat(...params: Array<MalType>): MalList {
+    params.forEach(checkMalTypeIsMalVectorOrMalList);
     const newList = new MalList();
-    lists.forEach(list => newList.push(...list));
+    params.forEach(param => newList.push(...param as MalVector));
     return newList;
+}
+
+function nth(...params: Array<MalType>) {
+    checkMalInnerParameters(MalSymbol.get(Symbols.Nth), params, 2);
+    const [list, index] = params;
+    checkMalTypeIsMalVectorOrMalList(list);
+    checkMalTypeIsMalNumber(index);
+    const instance = (list as MalVector).get(index.value);
+    if (!instance) throw new MalIndexOutOfRangeError(list as MalVector, index);
+    return instance;
+}
+
+function first(...params: Array<MalType>) {
+    checkMalInnerParameters(MalSymbol.get(Symbols.First), params, 1);
+    const list = params[0];
+    checkMalTypeIsMalVectorOrMalList(list);
+    return (list as MalVector).first() || MalNil.get();
+}
+
+function rest(...params: Array<MalType>) {
+    checkMalInnerParameters(MalSymbol.get(Symbols.First), params, 1);
+    const list = params[0];
+    checkMalTypeIsMalVectorOrMalList(list);
+    const [, ...rest] = list as MalVector;
+    return new MalList(rest);
 }

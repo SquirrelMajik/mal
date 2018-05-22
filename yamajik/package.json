@@ -12,7 +12,8 @@
     "test:step4": "npm run build && node dist/step4_if_fn_do.js",
     "test:step5": "npm run build && node dist/step5_tco.js",
     "test:step6": "npm run build && node dist/step6_file.js",
-    "test:step7": "npm run build && node dist/step7_quoting.js"
+    "test:step7": "npm run build && node dist/step7_quoting.js",
+    "test:step8": "npm run build && node dist/step8_macro.js"
   },
   "dependencies": {},
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { groupArray } from "./utils";
+import config from "./config";
 import { checkMalVectorLength } from "./checker"
 import { MalReadError, MalUnexpectedToken } from "./errors";
 import {
@@ -41,12 +41,8 @@ export function readString(str: string): MalType {
 }
 
 function tokenizer(str: string): Array<string> {
-    if (isEmpty(str) || isComment(str)) {
-        return [];
-    } else {
-        let regex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\s\[\]{}('"`,;)]*)/g
-        return str.match(regex).map(token => token.trim());
-    }
+    let regex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"|;.*|[^\s\[\]{}('"`,;)]*)/g
+    return str.match(regex).map(token => token.trim());
 }
 
 function isEmpty(str: string): boolean {
@@ -116,7 +112,9 @@ function readAtom(reader: Reader): MalType {
 function AtomFromToken(token: string): MalType {
     if (MalSymbol.has(token)) {
         return MalSymbol.get(token);
-    } else if (token.startsWith(":")) {
+    } else if (token.match(MalTypeRegex.comment)) {
+        return config.debug ? new MalString(token) : MalUndefined.get();
+    } else if (token.match(MalTypeRegex.keyword)) {
         return MalKeyword.get(token.substr(1));
     } else if (token.match(MalTypeRegex.integer)) {
         return new MalNumber(parseInt(token, 10));
@@ -128,9 +126,12 @@ function AtomFromToken(token: string): MalType {
         } catch {
             throw new MalReadError(`invalid string ${token}`);
         }
-    } else if (token.match(MalTypeRegex.variable)) {
-        return MalSymbol.get(token);
     } else {
-        throw new MalUnexpectedToken(token);
+        return MalSymbol.get(token);
     }
+    // } else if (token.match(MalTypeRegex.variable)) {
+    //     return MalSymbol.get(token);
+    // } else {
+    //     throw new MalUnexpectedToken(token);
+    // }
 }

@@ -9,7 +9,9 @@ export const MalTypeRegex = {
     string: /^"(?:[^"\\]|\\.)*?"$/,
     integer: /^-?[0-9]+$/,
     float: /^-?[0-9]\.[0-9]+$/,
-    variable: /^[&_a-zA-Z][_\-a-zA-Z0-9!\*]*$/
+    variable: /^[&_a-zA-Z][_\-a-zA-Z0-9!\*]*$/,
+    keyword: /^:/,
+    comment: /^(?:\/\/)|;/
 }
 
 export class MalType {
@@ -306,10 +308,6 @@ export class MalSymbol extends MalType {
     private constructor(value: string) {
         super(value);
     }
-
-    isMultiple(): boolean {
-        return this.value.startsWith("&") || this.value.startsWith("...");
-    }
 }
 
 export class MalNativeFunction extends MalType {
@@ -326,15 +324,17 @@ export class MalNativeFunction extends MalType {
 
 export class MalFunction extends MalType {
     ast: MalType;
-    params: Array<MalSymbol>;
+    params: MalVector;
     env: MalEnv;
     value: Function;
+    isMacro: boolean;
 
-    constructor(ast: MalType, params: Array<MalSymbol>, env: MalEnv, fn: Function) {
+    constructor(ast: MalType, params: MalVector, env: MalEnv, fn: Function, isMacro: boolean = false) {
         super(fn);
         this.ast = ast;
         this.params = params;
         this.env = env;
+        this.isMacro = isMacro;
     }
 
     call(...args: Array<MalType>): MalType {
@@ -371,6 +371,7 @@ export const enum Symbols {
     Argv = "*ARGV*",
     // inner functions
     Def = "def!",
+    Defmacro = "defmacro!",
     Let = "let*",
     Do = "do",
     If = "if",
@@ -393,9 +394,9 @@ export const enum Symbols {
     LessEqual = "<=",
     GreatThan = ">",
     GreatEqual = ">=",
-    PrintString = "pr-str",
+    PrintString = "print-str",
     String = "str",
-    Print = "prn",
+    Print = "print",
     PrintLine = "println",
     ReadString = "read-str",
     Slurp = "slurp",
@@ -407,5 +408,9 @@ export const enum Symbols {
     Cons = "cons",
     Concat = "concat",
     Unquote = "unquote",
-    SpliceUnquote = "splice-unquote"
+    SpliceUnquote = "splice-unquote",
+    Macroexpand = "macroexpand",
+    Nth = "nth",
+    First = "first",
+    Rest = "rest"
 }
