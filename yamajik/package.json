@@ -4,21 +4,21 @@
   "version": "1.0.0",
   "description": "Make a Lisp (mal) language implemented in TypeScript",
   "scripts": {
-    "build": "tsfmt -r && tsc -p ./",
-    "test:step0": "npm run build && node dist/step0_repl.js",
-    "test:step1": "npm run build && node dist/step1_read_print.js",
-    "test:step2": "npm run build && node dist/step2_eval.js",
-    "test:step3": "npm run build && node dist/step3_environment.js",
-    "test:step4": "npm run build && node dist/step4_if_fn_do.js",
-    "test:step5": "npm run build && node dist/step5_tco.js",
-    "test:step6": "npm run build && node dist/step6_file.js",
-    "test:step7": "npm run build && node dist/step7_quoting.js",
-    "test:step8": "npm run build && node dist/step8_macro.js"
+    "build": "tsc -p ./",
+    "step0": "npm run build && node dist/step0_repl.js",
+    "step1": "npm run build && node dist/step1_read_print.js",
+    "step2": "npm run build && node dist/step2_eval.js",
+    "step3": "npm run build && node dist/step3_environment.js",
+    "step4": "npm run build && node dist/step4_if_fn_do.js",
+    "step5": "npm run build && node dist/step5_tco.js",
+    "step6": "npm run build && node dist/step6_file.js",
+    "step7": "npm run build && node dist/step7_quoting.js",
+    "step8": "npm run build && node dist/step8_macro.js",
+    "step9": "npm run build && node dist/step9_try.js"
   },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^9.6.5",
-    "typescript": "^2.8.1",
-    "typescript-formatter": "^7.2.0"
+    "typescript": "^2.8.1"
   }
 }

@@ -1,9 +1,9 @@
 const dev = {
-    debug: true
+  debug: true
 };
 
 const production = {
-    debug: false
+  debug: false
 };
 
 export default production;
