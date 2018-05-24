@@ -130,8 +130,13 @@ export class MalVector extends MalType {
   }
 
   valueString(readable: boolean = true): string {
-    const split = readable ? " " : ", ";
+    // const split = readable ? " " : ", ";
+    const split = " ";
     return `[${this.value.map(item => item.toString(readable)).join(split)}]`;
+  }
+
+  valueEqual(another: MalHashMap): boolean {
+    return this.toString(false) === another.toString(false);
   }
 }
 
@@ -141,7 +146,8 @@ export class MalList extends MalVector {
   }
 
   valueString(readable: boolean = true): string {
-    const split = readable ? " " : ", ";
+    // const split = readable ? " " : ", ";
+    const split = " ";
     return `(${this.value.map(item => item.toString(readable)).join(split)})`;
   }
 }
@@ -245,12 +251,8 @@ export class MalKeyword extends MalType {
 }
 
 export class MalHashMap extends MalType {
-  static mapEqual(map1: Map<any, any>, map2: Map<any, any>) {
-    return map1 === map2;
-  }
-
-  keywordMap = new Map<MalKeyword, MalType>();
-  stringMap = new Map<MalString, MalType>();
+  keywordMap = new Map<symbol, MalType>();
+  stringMap = new Map<symbol, MalType>();
 
   constructor(mapValues: Array<Array<MalType>>) {
     super();
@@ -262,9 +264,11 @@ export class MalHashMap extends MalType {
 
   get(key: MalType): MalType {
     if (isMalKeyword(key)) {
-      return this.keywordMap.get(key);
+      const sym = Symbol.for(key.value);
+      return this.keywordMap.get(sym);
     } else if (isMalString(key)) {
-      return this.stringMap.get(key);
+      const sym = Symbol.for(key.value);
+      return this.stringMap.get(sym);
     } else {
       throw new MalUnexpectedTokenType(key, MalKeyword, MalString);
     }
@@ -272,9 +276,11 @@ export class MalHashMap extends MalType {
 
   has(key: MalType): boolean {
     if (isMalKeyword(key)) {
-      return this.keywordMap.has(key);
+      const sym = Symbol.for(key.value);
+      return this.keywordMap.has(sym);
     } else if (isMalString(key)) {
-      return this.stringMap.has(key);
+      const sym = Symbol.for(key.value);
+      return this.stringMap.has(sym);
     } else {
       throw new MalUnexpectedTokenType(key, MalKeyword, MalString);
     }
@@ -282,9 +288,11 @@ export class MalHashMap extends MalType {
 
   set(key: MalType, value: MalType): this {
     if (isMalKeyword(key)) {
-      this.keywordMap.set(key, value);
+      const sym = Symbol.for(key.value);
+      this.keywordMap.set(sym, value);
     } else if (isMalString(key)) {
-      this.stringMap.set(key, value);
+      const sym = Symbol.for(key.value);
+      this.stringMap.set(sym, value);
     } else {
       throw new MalUnexpectedTokenType(key, MalKeyword, MalString);
     }
@@ -293,9 +301,11 @@ export class MalHashMap extends MalType {
 
   delete(key: MalType): boolean {
     if (isMalKeyword(key)) {
-      return this.keywordMap.delete(key);
+      const sym = Symbol.for(key.value);
+      return this.keywordMap.delete(sym);
     } else if (isMalString(key)) {
-      return this.stringMap.delete(key);
+      const sym = Symbol.for(key.value);
+      return this.stringMap.delete(sym);
     } else {
       throw new MalUnexpectedTokenType(key, MalKeyword, MalString);
     }
@@ -317,7 +327,13 @@ export class MalHashMap extends MalType {
   }
 
   keys(): Array<MalType> {
-    return [...this.keywordMap.keys(), ...this.stringMap.keys()];
+    const keywordMapKeys = Array.from(this.keywordMap.keys()).map(key =>
+      MalKeyword.get(Symbol.keyFor(key))
+    );
+    const stringMapKeys = Array.from(this.stringMap.keys()).map(
+      key => new MalString(Symbol.keyFor(key))
+    );
+    return [...keywordMapKeys, ...stringMapKeys];
   }
 
   values(): Array<MalType> {
@@ -329,27 +345,27 @@ export class MalHashMap extends MalType {
   }
 
   *entries(): IterableIterator<[MalType, MalType]> {
-    yield* this.keywordMap;
-    yield* this.stringMap;
+    for (const [key, value] of this.keywordMap) {
+      yield [MalKeyword.get(Symbol.keyFor(key)), value];
+    }
+    for (const [key, value] of this.stringMap) {
+      yield [new MalString(Symbol.keyFor(key)), value];
+    }
   }
 
-  equal(another: MalHashMap): boolean {
-    return (
-      this === another ||
-      (MalHashMap.mapEqual(this.keywordMap, another.keywordMap) &&
-        MalHashMap.mapEqual(this.stringMap, another.stringMap))
-    );
+  valueEqual(another: MalHashMap): boolean {
+    return this.toString() === another.toString();
   }
 
   valueString(readable: boolean = true): string {
-    const kvSplit = readable ? " " : " => ";
-    const itemSplit = readable ? " " : ", ";
-    const valueStrings = Array.from(chain(this.keywordMap, this.stringMap)).map(
-      item => {
-        const [key, value] = item;
-        return [key.toString(readable), value.toString(readable)].join(kvSplit);
-      }
-    );
+    // const kvSplit = readable ? " " : " => ";
+    // const itemSplit = readable ? " " : ", ";
+    const kvSplit = " ";
+    const itemSplit = " ";
+    const valueStrings = [...this].sort().map(item => {
+      const [key, value] = item;
+      return [key.toString(readable), value.toString(readable)].join(kvSplit);
+    });
     return `{${valueStrings.join(itemSplit)}}`;
   }
 }

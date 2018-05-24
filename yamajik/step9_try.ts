@@ -314,7 +314,7 @@ function PRINT(exp: MalType): string {
   return printString(exp);
 }
 
-function rep(str: string): string {
+export function rep(str: string): string {
   return PRINT(EVAL(READ(str), GlobalEnv));
 }
 
@@ -356,4 +356,6 @@ function main(): void {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}

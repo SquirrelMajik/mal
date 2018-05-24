@@ -14,7 +14,8 @@
     "step6": "npm run build && node dist/step6_file.js",
     "step7": "npm run build && node dist/step7_quoting.js",
     "step8": "npm run build && node dist/step8_macro.js",
-    "step9": "npm run build && node dist/step9_try.js"
+    "step9": "npm run build && node dist/step9_try.js",
+    "test": "npm run build && node dist/test.js"
   },
   "dependencies": {},
   "devDependencies": {

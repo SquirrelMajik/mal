@@ -274,8 +274,8 @@ function printStr(...params: Array<MalType>): MalString {
 }
 
 function string(...params: Array<MalType>): MalString {
-  params.forEach(checkMalTypeIsMalString);
-  const newString = params.map(param => param.value).join("");
+  params.forEach(checkMalTypeIsMalType);
+  const newString = params.map(param => param.toString(false)).join("");
   return new MalString(newString);
 }
 
