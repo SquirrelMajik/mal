@@ -141,8 +141,7 @@ function EVAL_NOT_CATCH(ast: MalType, env: MalEnv): MalType {
         case MalSymbol.get(Symbols.Defmacro):
           return DEFMACRO(env, args);
         case MalSymbol.get(Symbols.Macroexpand):
-          ast = MACROEXPAND(env, args);
-          continue loop;
+          return MACROEXPAND(env, args);
         case MalSymbol.get(Symbols.Try):
           return TRY(env, args);
       }
